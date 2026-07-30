@@ -57,7 +57,7 @@ def get_keywords_by_project_id(project_id: int) -> list[dict[str, Any]]:
         .eq("project_id", project_id)
         .execute()
     )
-
+    print("RELACIONES DE KEYWORDS:", response.data)
     keywords: list[dict[str, Any]] = []
 
     for relation in response.data:

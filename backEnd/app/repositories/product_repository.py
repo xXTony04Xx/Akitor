@@ -38,7 +38,6 @@ def get_products_by_project_id(project_id: int) -> list[dict[str, Any]]:
                 "id": product["id"],
                 "sku": product["sku"],
                 "name": product["name"],
-                "quantity": relation["quantity"],
             }
         )
 
