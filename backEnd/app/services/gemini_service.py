@@ -420,6 +420,10 @@ def get_gemini_client() -> genai.Client:
 async def generate_text(prompt: str) -> tuple[str, str, str]:
     settings = get_gemini_settings()
     client = get_gemini_client()
+    print(
+        f"[AKITOR] Mensaje recibido ({len(prompt)} caracteres).",
+        flush=True,
+    )
     contents: list[types.Content] = [
         types.Content(
             role="user",
@@ -429,6 +433,11 @@ async def generate_text(prompt: str) -> tuple[str, str, str]:
     tool_calls = 0
 
     while True:
+        print(
+            f"[AKITOR] Enviando solicitud a Gemini. "
+            f"Búsquedas realizadas: {tool_calls}/2.",
+            flush=True,
+        )
         response = await client.aio.models.generate_content(
             model=settings.gemini_model,
             contents=contents,
@@ -444,6 +453,11 @@ async def generate_text(prompt: str) -> tuple[str, str, str]:
         function_calls = response.function_calls or []
 
         if not function_calls:
+            print(
+                f"[AKITOR] Gemini generó la respuesta final "
+                f"({len(response.text or '')} caracteres).",
+                flush=True,
+            )
             return (
                 response.response_id,
                 settings.gemini_model,
@@ -451,22 +465,45 @@ async def generate_text(prompt: str) -> tuple[str, str, str]:
             )
 
         function_call = function_calls[0]
+        print(
+            f"[AKITOR] Gemini solicitó la herramienta: "
+            f"{function_call.name}.",
+            flush=True,
+        )
         contents.append(response.candidates[0].content)
 
         if function_call.name != "buscar_productos_aki":
+            print(
+                "[AKITOR] La herramienta solicitada no está disponible.",
+                flush=True,
+            )
             tool_result = {
                 "error": "La herramienta solicitada no está disponible."
             }
         else:
             try:
+                print(
+                    f"[AKITOR] Ejecutando búsqueda "
+                    f"{tool_calls + 1} de 2...",
+                    flush=True,
+                )
                 tool_result = await buscar_productos_aki(
                     dict(function_call.args or {}),
                 )
-            except Exception:
+            except Exception as error:
+                print(
+                    f"[AKITOR] La consulta de productos falló: "
+                    f"{type(error).__name__}.",
+                    flush=True,
+                )
                 tool_result = {
                     "error": "No fue posible consultar los productos de AKI."
                 }
 
+        print(
+            "[AKITOR] Enviando el resultado de la herramienta a Gemini...",
+            flush=True,
+        )
         contents.append(
             types.Content(
                 role="tool",

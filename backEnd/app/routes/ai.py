@@ -18,9 +18,14 @@ router = APIRouter(
     summary="Generar una respuesta con Gemini",
 )
 async def create_ai_response(payload: AIResponseRequest) -> AIResponse:
+    print("[AKITOR] POST /api/v1/ai/responses iniciado.", flush=True)
     try:
         response_id, model, output = await generate_text(payload.prompt)
 
+        print(
+            f"[AKITOR] Solicitud completada con el modelo {model}.",
+            flush=True,
+        )
         return AIResponse(
             id=response_id,
             model=model,
@@ -28,12 +33,17 @@ async def create_ai_response(payload: AIResponseRequest) -> AIResponse:
         )
 
     except ValidationError as error:
+        print("[AKITOR] Falta configurar Gemini.", flush=True)
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="La integración con Gemini no está configurada.",
         ) from error
 
     except APIError as error:
+        print(
+            f"[AKITOR] Gemini respondió con error HTTP {error.code}.",
+            flush=True,
+        )
         if error.code == 429:
             raise HTTPException(
                 status_code=status.HTTP_429_TOO_MANY_REQUESTS,

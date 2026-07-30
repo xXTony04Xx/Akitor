@@ -60,9 +60,12 @@ AKI_TOOLS = [
 
 
 async def buscar_productos_aki(arguments: dict[str, Any]) -> dict[str, Any]:
+    print("[AKITOR] Validando palabras clave extraídas por Gemini...", flush=True)
     request = RecommendationRequest.model_validate(arguments)
     keywords = [keyword.model_dump() for keyword in request.keywords]
 
+    print(f"[AKITOR] Keywords extraídas: {keywords}", flush=True)
+    print("[AKITOR] Consultando proyectos y productos relacionados...", flush=True)
     recommendation = await asyncio.to_thread(
         build_recommendation,
         keywords,
@@ -76,6 +79,11 @@ async def buscar_productos_aki(arguments: dict[str, Any]) -> dict[str, Any]:
         for product in recommendation["products"]
         if product.get("sku") and product.get("name")
     ]
+
+    print(
+        f"[AKITOR] Consulta completada: {len(products)} producto(s) encontrado(s).",
+        flush=True,
+    )
 
     return {
         "products": products,
