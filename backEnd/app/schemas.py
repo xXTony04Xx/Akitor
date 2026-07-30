@@ -1,5 +1,8 @@
 from datetime import datetime
-from pydantic import BaseModel
+from typing import List
+
+from pydantic import BaseModel, Field
+
 
 
 class ProjectResponse(BaseModel):
@@ -9,7 +12,7 @@ class ProjectResponse(BaseModel):
 
 
 class ProjectListResponse(BaseModel):
-    projects: list[ProjectResponse]
+    projects: List[ProjectResponse]
     total: int
 
 
@@ -19,15 +22,56 @@ class KeywordResponse(BaseModel):
     type: str
 
 
-class ProjectProductResponse(BaseModel):
+class ProductResponse(BaseModel):
     id: int
     sku: str
     name: str
+    quantity: float
 
 
 class ProjectDetailResponse(BaseModel):
     id: int
     name: str
     created_at: datetime
-    keywords: list[KeywordResponse]
-    products: list[ProjectProductResponse]
+    keywords: List[KeywordResponse]
+    products: List[ProductResponse]
+
+
+class RecommendationKeywordRequest(BaseModel):
+    name: str = Field(min_length=1)
+    type: str = Field(min_length=1)
+
+
+class RecommendationRequest(BaseModel):
+    keywords: List[RecommendationKeywordRequest] = Field(
+        min_length=1
+    )
+
+
+class MatchedKeywordResponse(BaseModel):
+    name: str
+    type: str
+    weight: int
+
+
+class MatchedProjectResponse(BaseModel):
+    id: int
+    name: str
+    score: int
+    matched_keywords: List[MatchedKeywordResponse]
+
+
+class RecommendedProductResponse(BaseModel):
+    id: int
+    sku: str
+    name: str
+    quantity: float
+    project_id: int
+    project_name: str
+    project_score: int
+
+
+class RecommendationResponse(BaseModel):
+    matchedProjects: List[MatchedProjectResponse]
+    products: List[RecommendedProductResponse]
+    totalProducts: int
