@@ -3,8 +3,6 @@ from typing import List
 
 from pydantic import BaseModel, Field
 
-
-
 class ProjectResponse(BaseModel):
     id: int
     name: str
@@ -33,45 +31,20 @@ class ProjectDetailResponse(BaseModel):
     id: int
     name: str
     created_at: datetime
-    keywords: List[KeywordResponse]
-    products: List[ProductResponse]
+    keywords: list[KeywordResponse]
+    products: list[ProjectProductResponse]
 
 
-class RecommendationKeywordRequest(BaseModel):
-    name: str = Field(min_length=1)
-    type: str = Field(min_length=1)
-
-
-class RecommendationRequest(BaseModel):
-    keywords: List[RecommendationKeywordRequest] = Field(
-        min_length=1
+class AIResponseRequest(BaseModel):
+    prompt: str = Field(
+        min_length=1,
+        max_length=20_000,
+        description="Instrucción o pregunta que se enviará al modelo.",
+        examples=["Resume las ventajas de este producto en tres puntos."],
     )
 
 
-class MatchedKeywordResponse(BaseModel):
-    name: str
-    type: str
-    weight: int
-
-
-class MatchedProjectResponse(BaseModel):
-    id: int
-    name: str
-    score: int
-    matched_keywords: List[MatchedKeywordResponse]
-
-
-class RecommendedProductResponse(BaseModel):
-    id: int
-    sku: str
-    name: str
-    quantity: float
-    project_id: int
-    project_name: str
-    project_score: int
-
-
-class RecommendationResponse(BaseModel):
-    matchedProjects: List[MatchedProjectResponse]
-    products: List[RecommendedProductResponse]
-    totalProducts: int
+class AIResponse(BaseModel):
+    id: str
+    model: str
+    output: str
