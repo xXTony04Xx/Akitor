@@ -41,7 +41,8 @@ async def chat(payload: AIResponseRequest) -> AIResponse:
 
     except APIError as error:
         print(
-            f"[AKITOR] Gemini respondió con error HTTP {error.code}.",
+            f"[AKITOR] Gemini respondió con error HTTP {error.code}: "
+            f"{error.status} - {error.message}",
             flush=True,
         )
         if error.code == 429:

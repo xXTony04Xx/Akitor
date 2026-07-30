@@ -506,7 +506,7 @@ async def generate_text(prompt: str) -> tuple[str, str, str]:
         )
         contents.append(
             types.Content(
-                role="tool",
+                role="user",
                 parts=[
                     types.Part.from_function_response(
                         name=function_call.name,
