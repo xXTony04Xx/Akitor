@@ -1,4 +1,6 @@
+from collections.abc import Awaitable, Callable
 from functools import lru_cache
+from typing import Any
 
 from google import genai
 from google.genai import types
@@ -7,6 +9,18 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from app.schemas import ChatMessage
 from app.services.ai_tools import AKI_TOOLS, buscar_productos_aki
+
+
+ProgressCallback = Callable[[str, dict[str, Any]], Awaitable[None]]
+
+
+async def emit_progress(
+    callback: ProgressCallback | None,
+    event: str,
+    **data: Any,
+) -> None:
+    if callback is not None:
+        await callback(event, data)
 
 
 # Reemplaza este texto por el prompt de instrucciones definitivo.
@@ -433,6 +447,7 @@ def get_gemini_client() -> genai.Client:
 async def generate_text(
     prompt: str,
     history: list[ChatMessage] | None = None,
+    progress: ProgressCallback | None = None,
 ) -> tuple[str, str, str]:
     settings = get_gemini_settings()
     client = get_gemini_client()
@@ -441,6 +456,12 @@ async def generate_text(
         f"[AKITOR] Mensaje recibido ({len(prompt)} caracteres) con "
         f"{len(history)} mensaje(s) en el historial.",
         flush=True,
+    )
+    await emit_progress(
+        progress,
+        "status",
+        stage="received",
+        message="Recibí tu mensaje.",
     )
     contents: list[types.Content] = [
         types.Content(
@@ -458,6 +479,16 @@ async def generate_text(
     tool_calls = 0
 
     while True:
+        await emit_progress(
+            progress,
+            "status",
+            stage="analyzing" if tool_calls == 0 else "generating",
+            message=(
+                "Estoy analizando tu proyecto."
+                if tool_calls == 0
+                else "Estoy preparando la respuesta."
+            ),
+        )
         print(
             f"[AKITOR] Enviando solicitud a Gemini. "
             f"Búsquedas realizadas: {tool_calls}/2.",
@@ -483,6 +514,12 @@ async def generate_text(
                 f"({len(response.text or '')} caracteres).",
                 flush=True,
             )
+            await emit_progress(
+                progress,
+                "status",
+                stage="completed",
+                message="Respuesta completada.",
+            )
             return (
                 response.response_id,
                 settings.gemini_model,
@@ -494,6 +531,12 @@ async def generate_text(
             f"[AKITOR] Gemini solicitó la herramienta: "
             f"{function_call.name}.",
             flush=True,
+        )
+        await emit_progress(
+            progress,
+            "tool",
+            stage="keywords_extracted",
+            message="Identifiqué los elementos principales del proyecto.",
         )
         contents.append(response.candidates[0].content)
 
@@ -512,14 +555,38 @@ async def generate_text(
                     f"{tool_calls + 1} de 2...",
                     flush=True,
                 )
+                await emit_progress(
+                    progress,
+                    "status",
+                    stage="searching_products",
+                    message="Estoy buscando productos usados en proyectos similares.",
+                    attempt=tool_calls + 1,
+                )
                 tool_result = await buscar_productos_aki(
                     dict(function_call.args or {}),
+                )
+                await emit_progress(
+                    progress,
+                    "tool",
+                    stage="products_found",
+                    message=(
+                        f"Encontré {tool_result['totalProducts']} "
+                        "producto(s) relacionado(s)."
+                    ),
+                    total=tool_result["totalProducts"],
+                    attempt=tool_calls + 1,
                 )
             except Exception as error:
                 print(
                     f"[AKITOR] La consulta de productos falló: "
                     f"{type(error).__name__}.",
                     flush=True,
+                )
+                await emit_progress(
+                    progress,
+                    "error",
+                    stage="product_search_failed",
+                    message="No fue posible consultar los productos.",
                 )
                 tool_result = {
                     "error": "No fue posible consultar los productos de AKI."
