@@ -1,5 +1,6 @@
 from fastapi import FastAPI, HTTPException, status
 from app.database import get_supabase_client
+from app.routes.ai import router as ai_router
 from app.routes.projects import router as projects_router
 
 
@@ -10,6 +11,7 @@ app = FastAPI(
 )
 
 
+app.include_router(ai_router)
 app.include_router(projects_router)
 
 

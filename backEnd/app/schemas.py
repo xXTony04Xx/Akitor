@@ -1,5 +1,5 @@
 from datetime import datetime
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class ProjectResponse(BaseModel):
@@ -31,3 +31,18 @@ class ProjectDetailResponse(BaseModel):
     created_at: datetime
     keywords: list[KeywordResponse]
     products: list[ProjectProductResponse]
+
+
+class AIResponseRequest(BaseModel):
+    prompt: str = Field(
+        min_length=1,
+        max_length=20_000,
+        description="Instrucción o pregunta que se enviará al modelo.",
+        examples=["Resume las ventajas de este producto en tres puntos."],
+    )
+
+
+class AIResponse(BaseModel):
+    id: str
+    model: str
+    output: str
