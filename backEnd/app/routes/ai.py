@@ -20,7 +20,10 @@ router = APIRouter(
 async def chat(payload: AIResponseRequest) -> AIResponse:
     print("[AKITOR] POST /chat iniciado.", flush=True)
     try:
-        response_id, model, output = await generate_text(payload.prompt)
+        response_id, model, output = await generate_text(
+            payload.prompt,
+            payload.history,
+        )
 
         print(
             f"[AKITOR] Solicitud completada con el modelo {model}.",

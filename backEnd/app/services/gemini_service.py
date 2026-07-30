@@ -5,6 +5,7 @@ from google.genai import types
 from pydantic import SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+from app.schemas import ChatMessage
 from app.services.ai_tools import AKI_TOOLS, buscar_productos_aki
 
 
@@ -417,19 +418,31 @@ def get_gemini_client() -> genai.Client:
     return genai.Client(api_key=settings.gemini_api_key.get_secret_value())
 
 
-async def generate_text(prompt: str) -> tuple[str, str, str]:
+async def generate_text(
+    prompt: str,
+    history: list[ChatMessage] | None = None,
+) -> tuple[str, str, str]:
     settings = get_gemini_settings()
     client = get_gemini_client()
+    history = history or []
     print(
-        f"[AKITOR] Mensaje recibido ({len(prompt)} caracteres).",
+        f"[AKITOR] Mensaje recibido ({len(prompt)} caracteres) con "
+        f"{len(history)} mensaje(s) en el historial.",
         flush=True,
     )
     contents: list[types.Content] = [
         types.Content(
+            role="model" if message.role == "assistant" else "user",
+            parts=[types.Part.from_text(text=message.content)],
+        )
+        for message in history
+    ]
+    contents.append(
+        types.Content(
             role="user",
             parts=[types.Part.from_text(text=prompt)],
         )
-    ]
+    )
     tool_calls = 0
 
     while True:

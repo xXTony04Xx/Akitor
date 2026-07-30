@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import List
+from typing import List, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -35,12 +35,22 @@ class ProjectDetailResponse(BaseModel):
     products: list[ProductResponse]
 
 
+class ChatMessage(BaseModel):
+    role: Literal["user", "assistant"]
+    content: str = Field(min_length=1, max_length=20_000)
+
+
 class AIResponseRequest(BaseModel):
     prompt: str = Field(
         min_length=1,
         max_length=20_000,
         description="Instrucción o pregunta que se enviará al modelo.",
         examples=["Resume las ventajas de este producto en tres puntos."],
+    )
+    history: list[ChatMessage] = Field(
+        default_factory=list,
+        max_length=100,
+        description="Mensajes anteriores de la conversación.",
     )
 
 
