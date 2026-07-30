@@ -1,6 +1,7 @@
 from datetime import datetime
-from pydantic import BaseModel, Field
+from typing import List
 
+from pydantic import BaseModel, Field
 
 class ProjectResponse(BaseModel):
     id: int
@@ -9,7 +10,7 @@ class ProjectResponse(BaseModel):
 
 
 class ProjectListResponse(BaseModel):
-    projects: list[ProjectResponse]
+    projects: List[ProjectResponse]
     total: int
 
 
@@ -19,10 +20,11 @@ class KeywordResponse(BaseModel):
     type: str
 
 
-class ProjectProductResponse(BaseModel):
+class ProductResponse(BaseModel):
     id: int
     sku: str
     name: str
+    quantity: float
 
 
 class ProjectDetailResponse(BaseModel):
