@@ -7,18 +7,18 @@ from app.services.gemini_service import generate_text
 
 
 router = APIRouter(
-    prefix="/api/v1/ai",
-    tags=["AI"],
+    prefix="/chat",
+    tags=["Chat"],
 )
 
 
 @router.post(
-    "/responses",
+    "",
     response_model=AIResponse,
-    summary="Generar una respuesta con Gemini",
+    summary="Conversar con Akitor",
 )
-async def create_ai_response(payload: AIResponseRequest) -> AIResponse:
-    print("[AKITOR] POST /api/v1/ai/responses iniciado.", flush=True)
+async def chat(payload: AIResponseRequest) -> AIResponse:
+    print("[AKITOR] POST /chat iniciado.", flush=True)
     try:
         response_id, model, output = await generate_text(payload.prompt)
 
