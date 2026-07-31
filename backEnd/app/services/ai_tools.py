@@ -10,9 +10,12 @@ from app.services.recommendation_service import build_recommendation
 BUSCAR_PRODUCTOS_AKI = types.FunctionDeclaration(
     name="buscar_productos_aki",
     description=(
-        "Busca productos reales de AKI relacionados con un proyecto. "
-        "Úsala cuando el usuario haya descrito con suficiente claridad "
-        "qué desea construir, instalar, reparar o mantener."
+        "Busca productos de AKI en una de dos fuentes. Usa search_mode=project "
+        "para proyectos: es la opción prioritaria y aprovecha el historial de "
+        "productos comprados por clientes en proyectos similares. Usa "
+        "search_mode=product únicamente cuando el cliente pida encontrar o "
+        "consultar un producto concreto por su nombre; ese modo busca títulos "
+        "en Algolia y relaja automáticamente los términos secundarios."
     ),
     parameters_json_schema={
         "type": "object",
@@ -20,9 +23,10 @@ BUSCAR_PRODUCTOS_AKI = types.FunctionDeclaration(
             "keywords": {
                 "type": "array",
                 "description": (
-                    "Palabras clave normalizadas que representan el proyecto."
+                    "Palabras clave normalizadas del producto solicitado o "
+                    "del proyecto descrito."
                 ),
-                "minItems": 2,
+                "minItems": 1,
                 "items": {
                     "type": "object",
                     "properties": {
@@ -48,8 +52,17 @@ BUSCAR_PRODUCTOS_AKI = types.FunctionDeclaration(
                     "additionalProperties": False,
                 },
             },
+            "search_mode": {
+                "type": "string",
+                "enum": ["project", "product"],
+                "description": (
+                    "project para recomendar según proyectos y compras "
+                    "anteriores; product solo para buscar un producto "
+                    "específico por título."
+                ),
+            },
         },
-        "required": ["keywords"],
+        "required": ["keywords", "search_mode"],
         "additionalProperties": False,
     },
 )
@@ -69,6 +82,7 @@ async def buscar_productos_aki(arguments: dict[str, Any]) -> dict[str, Any]:
     recommendation = await asyncio.to_thread(
         build_recommendation,
         keywords,
+        request.search_mode,
     )
 
     products = [

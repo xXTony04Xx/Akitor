@@ -2,8 +2,10 @@
 
 ## Búsqueda de productos en Algolia
 
-Akitor busca primero por todas las palabras clave extraídas del proyecto. Si no
-encuentra productos, elimina progresivamente los términos de contexto
+La búsqueda principal de Akitor usa los proyectos y las compras históricas de
+Supabase. Algolia se consulta únicamente cuando el cliente pide un producto
+específico por nombre o tipo. En ese caso busca primero por todas las palabras
+clave. Si no encuentra productos, elimina progresivamente los términos de contexto
 (`use`, `location`, `action` y `material`) y conserva el objeto principal para
 el último intento.
 

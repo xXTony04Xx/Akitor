@@ -35,7 +35,10 @@ def create_recommendation(
             for keyword in request.keywords
         ]
 
-        recommendation = build_recommendation(keywords)
+        recommendation = build_recommendation(
+            keywords,
+            request.search_mode,
+        )
 
         return RecommendationResponse(**recommendation)
 

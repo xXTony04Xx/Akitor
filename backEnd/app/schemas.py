@@ -67,6 +67,7 @@ class RecommendationKeyword(BaseModel):
 
 class RecommendationRequest(BaseModel):
     keywords: list[RecommendationKeyword] = Field(min_length=1)
+    search_mode: Literal["project", "product"] = "project"
 
 
 class MatchedKeywordResponse(RecommendationKeyword):

@@ -149,12 +149,20 @@ def calculate_project_score(
 
 def build_recommendation(
     input_keywords: list[dict[str, str]],
+    search_mode: str = "project",
 ) -> dict[str, Any]:
     """
     Construye la recomendación completa.
     """
 
-    catalog_products = search_catalog_progressively(input_keywords)
+    if search_mode == "product":
+        catalog_products = search_catalog_progressively(input_keywords)
+        return {
+            "matchedProjects": [],
+            "products": catalog_products[:PRODUCTS_LIMIT],
+            "totalProducts": len(catalog_products[:PRODUCTS_LIMIT]),
+        }
+
     projects = get_all_projects_with_keywords()
 
     ranked_projects = []
@@ -222,10 +230,7 @@ def build_recommendation(
         )
     )
 
-    products_by_sku: dict[str, dict[str, Any]] = {
-        normalize_text(product["sku"]): product
-        for product in catalog_products
-    }
+    products_by_sku: dict[str, dict[str, Any]] = {}
 
     for product in products:
         sku = normalize_text(product["sku"])
