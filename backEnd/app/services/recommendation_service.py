@@ -1,6 +1,9 @@
 import unicodedata
 from typing import Any
 
+from app.repositories.algolia_product_repository import (
+    search_products_by_title,
+)
 from app.repositories.product_repository import (
     get_products_by_project_ids,
 )
@@ -19,6 +22,16 @@ KEYWORD_WEIGHTS = {
 
 TOP_PROJECTS_LIMIT = 3
 PRODUCTS_LIMIT = 20
+
+# Se eliminan primero los términos que normalmente describen el contexto y no
+# el nombre del producto. El objeto se conserva hasta el último intento.
+KEYWORD_RELAXATION_PRIORITY = {
+    "use": 0,
+    "location": 1,
+    "action": 2,
+    "material": 3,
+    "object": 4,
+}
 
 
 def normalize_text(value: str) -> str:
@@ -42,6 +55,44 @@ def normalize_text(value: str) -> str:
 
 def normalize_keyword_type(keyword_type: str) -> str:
     return normalize_text(keyword_type)
+
+
+def build_progressive_queries(
+    input_keywords: list[dict[str, str]],
+) -> list[str]:
+    """Genera búsquedas de mayor a menor especificidad, sin repetirlas."""
+
+    ordered_keywords = sorted(
+        input_keywords,
+        key=lambda keyword: KEYWORD_RELAXATION_PRIORITY.get(
+            normalize_keyword_type(keyword["type"]),
+            0,
+        ),
+    )
+    terms = [normalize_text(keyword["name"]) for keyword in ordered_keywords]
+    queries = []
+
+    while terms:
+        query = " ".join(terms)
+        if query and query not in queries:
+            queries.append(query)
+        terms.pop(0)
+
+    return queries
+
+
+def search_catalog_progressively(
+    input_keywords: list[dict[str, str]],
+) -> list[dict[str, Any]]:
+    """Relaja una palabra por intento y se detiene al encontrar resultados."""
+
+    for query in build_progressive_queries(input_keywords):
+        print(f"[AKITOR] Buscando en Algolia por título: {query}", flush=True)
+        products = search_products_by_title(query, PRODUCTS_LIMIT)
+        if products:
+            return products
+
+    return []
 
 
 def calculate_project_score(
@@ -103,6 +154,7 @@ def build_recommendation(
     Construye la recomendación completa.
     """
 
+    catalog_products = search_catalog_progressively(input_keywords)
     projects = get_all_projects_with_keywords()
 
     ranked_projects = []
@@ -170,7 +222,10 @@ def build_recommendation(
         )
     )
 
-    products_by_sku: dict[str, dict[str, Any]] = {}
+    products_by_sku: dict[str, dict[str, Any]] = {
+        normalize_text(product["sku"]): product
+        for product in catalog_products
+    }
 
     for product in products:
         sku = normalize_text(product["sku"])

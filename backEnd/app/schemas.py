@@ -81,12 +81,12 @@ class MatchedProjectResponse(BaseModel):
 
 
 class RecommendedProductResponse(BaseModel):
-    id: int
+    id: int | str | None
     sku: str
     name: str
-    project_id: int
-    project_name: str
-    project_score: int
+    project_id: int | None = None
+    project_name: str | None = None
+    project_score: int | None = None
 
 
 class RecommendationResponse(BaseModel):
